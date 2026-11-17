@@ -412,7 +412,7 @@ There is one ProviderConfig per family, named like the provider. The service cha
 To upgrade providers, bump `package` in all five `values.yaml` files together. `scripts/validate.sh`
 fails if the versions differ, and it validates against the CRDs of the new version.
 
-## XRDs, Compositions and the resource abstraction
+## Architecture: Helm-Based Resource Abstraction.
 
 **The original implementation contains no XRDs and no Compositions, and this repository does not add any.**
 The abstraction that application teams use is the Helm chart
