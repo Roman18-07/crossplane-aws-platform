@@ -1,0 +1,19 @@
+{{- if .Values.s3.enabled }}
+{{- if .Values.s3.publicAccessBlock.enabled }}
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketPublicAccessBlock
+metadata:
+  name: {{ .Values.s3.bucketName }}
+spec:
+  providerConfigRef:
+    name: {{ .Values.s3.providerConfigRef }}
+  forProvider:
+    region: {{ .Values.s3.region }}
+    bucketRef:
+      name: {{ .Values.s3.bucketName }}
+    blockPublicAcls: {{ .Values.s3.publicAccessBlock.blockPublicAcls }}
+    blockPublicPolicy: {{ .Values.s3.publicAccessBlock.blockPublicPolicy }}
+    ignorePublicAcls: {{ .Values.s3.publicAccessBlock.ignorePublicAcls }}
+    restrictPublicBuckets: {{ .Values.s3.publicAccessBlock.restrictPublicBuckets }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,62 @@
+# Renders one Argo CD Application per applications/services/*/service.yaml.
+# AWS resources are requested through the optional infrastructure.yaml next to service.yaml.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: services
+  namespace: argo-cd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/your-org/crossplane-aws-platform.git
+        revision: HEAD
+        files:
+          - path: applications/services/*/service.yaml
+  template:
+    metadata:
+      name: "{{ name }}"
+      annotations:
+        originalName: "{{ name }}"
+        sourceCodeRepositoryUrl: "{{ sourceCode.repositoryUrl }}"
+        sourceCodeCommitSha: "{{ sourceCode.commitSha }}"
+    spec:
+      project: services
+      destination:
+        namespace: "{{ name }}-a"
+        server: https://kubernetes.default.svc
+      source:
+        repoURL: https://github.com/your-org/crossplane-aws-platform.git
+        targetRevision: HEAD
+        path: applications/profiles/{{ profile }}
+        helm:
+          ignoreMissingValueFiles: true
+          valueFiles:
+            - ../../services/service.yaml
+            - ../../services/{{ name }}/service.yaml
+            - ../../services/{{ name }}/infrastructure.yaml
+      ignoreDifferences:
+        - group: networking.istio.io
+          kind: VirtualService
+          jqPathExpressions:
+            - .spec.http[].route[].weight
+        - group: argoproj.io
+          kind: Rollout
+          jqPathExpressions:
+            - .spec.replicas
+      syncPolicy:
+        managedNamespaceMetadata:
+          labels:
+            istio-injection: enabled
+        syncOptions:
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true
+          # Keeps replica counts managed by an autoscaler from being reset to the chart value.
+          # https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#respect-ignore-differences-configs
+          - RespectIgnoreDifferences=true
+      info:
+        - name: "Owner team name:"
+          value: "{{ metadata.owner.team.name }}"
+  syncPolicy:
+    preserveResourcesOnDeletion: true

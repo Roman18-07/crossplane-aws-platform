@@ -1,0 +1,111 @@
+{{- if .Values.rds.enabled }}
+{{- $vals := (.Values | toYaml | fromYaml) -}}
+{{- $env := default "staging" (index $vals "metadata" "environment") -}}
+{{- $app := default .Release.Name (index $vals "metadata" "application") -}}
+{{- $teamId := (index $vals "metadata" "owner" "team" "id" | default "platform") -}}
+{{- $repo := (default .Values.sourceCode.repositoryUrl (index $vals "metadata" "repo")) -}}
+
+{{- $raw := required "rds.instance.identifier is required" .Values.rds.instance.identifier -}}
+{{- $ctx := dict "id" $raw -}}
+{{- if not (regexMatch (printf "^%s-" $env) $raw) -}}
+  {{- $_ := set $ctx "id" (printf "%s-%s" $env $raw) -}}
+{{- end -}}
+{{- $id := $ctx.id -}}
+
+{{- $dbv := default "" .Values.rds.instance.dbName -}}
+{{- if eq $dbv "" -}}
+  {{- $dbv = (regexReplaceAll "[^A-Za-z0-9]" $id "" | lower) -}}
+{{- else -}}
+  {{- $dbv = (regexReplaceAll "[^A-Za-z0-9]" $dbv "" | lower) -}}
+{{- end -}}
+{{- if not (regexMatch "^[a-z]" $dbv) -}}
+  {{- $dbv = (printf "db%s" $dbv) -}}
+{{- end -}}
+{{- $dbv = (trunc 63 $dbv) -}}
+
+apiVersion: rds.aws.upbound.io/v1beta1
+kind: Instance
+metadata:
+  name: {{ $id | trunc 63 | trimSuffix "-" }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    crossplane.io/external-name: {{ $id | quote }}
+spec:
+  managementPolicies:
+    - Observe
+    - Create
+    - Update
+    - LateInitialize
+  deletionPolicy: Orphan
+  providerConfigRef:
+    name: {{ .Values.rds.providerConfigRefs.rds }}
+  writeConnectionSecretToRef:
+    name: {{ default (printf "%s-db" .Release.Name) .Values.rds.connectionSecret.name }}
+    namespace: {{ default .Release.Namespace .Values.rds.connectionSecret.namespace }}
+  forProvider:
+    identifier: {{ $id | quote }}
+    region: {{ .Values.rds.region }}
+    engine: {{ .Values.rds.instance.engine | default "postgres" | quote }}
+    engineVersion: {{ .Values.rds.instance.engineVersion | quote }}
+    instanceClass: {{ .Values.rds.instance.instanceClass | quote }}
+
+    dbName: {{ $dbv | quote }}
+
+    allocatedStorage: {{ .Values.rds.instance.allocatedStorage }}
+    maxAllocatedStorage: {{ .Values.rds.instance.maxAllocatedStorage }}
+    storageType: {{ .Values.rds.instance.storageType | default "gp3" | quote }}
+    storageEncrypted: true
+    tags:
+      Application: {{ $app | quote }}
+      Environment: {{ $env | quote }}
+      ApplicationComponent: {{ (index $vals "metadata" "applicationComponent" | default "application-stack") | quote }}
+      BudgetOwnerTeamId: {{ $teamId | quote }}
+      kubernetes_cluster: {{ printf "%s-apps" $env | quote }}
+      kubernetes_namespace: {{ .Release.Namespace | quote }}
+      Name: {{ $id | quote }}
+      Repo: {{ $repo | quote }}
+      Source: {{ (index $vals "metadata" "source" | default "managed-by-crossplane") | quote }}
+
+    {{- if .Values.rds.kms.create }}
+    kmsKeyIdRef:
+      name: {{ .Values.rds.kms.keyName }}
+    {{- else }}
+    kmsKeyId: {{ required "rds.kms.keyArn required when kms.create=false" .Values.rds.kms.keyArn | quote }}
+    {{- end }}
+
+    multiAz: {{ default true .Values.rds.instance.multiAZ }}
+    publiclyAccessible: {{ default false .Values.rds.instance.publiclyAccessible }}
+    copyTagsToSnapshot: {{ default true .Values.rds.instance.copyTagsToSnapshot }}
+    performanceInsightsEnabled: {{ default true .Values.rds.instance.performanceInsightsEnabled }}
+    deletionProtection: {{ default true .Values.rds.instance.deletionProtection }}
+    caCertIdentifier: {{ default "rds-ca-rsa2048-g1" .Values.rds.instance.caCertIdentifier | quote }}
+
+    {{- $backup := (coalesce .Values.rds.instance.backup (dict)) }}
+    backupRetentionPeriod: {{ default 14 $backup.retentionDays }}
+    backupWindow: {{ default "06:00-06:30" $backup.window | quote }}
+    maintenanceWindow: {{ default "thu:07:00-thu:08:00" .Values.rds.instance.maintenanceWindow | quote }}
+
+    dbSubnetGroupNameRef:
+      name: {{ default (printf "%s-%s-db-subnet" .Release.Namespace .Release.Name) .Values.rds.subnetGroup.name }}
+
+    vpcSecurityGroupIdRefs:
+      - name: {{ default (printf "%s-%s-db-access" $env $app) .Values.rds.securityGroup.name }}
+
+    username: {{ .Values.rds.master.username | quote }}
+
+    {{- if .Values.rds.master.managePasswordWithAWS }}
+    manageMasterUserPassword: true
+    masterUserSecretKmsKeyIdRef:
+      name: {{ .Values.rds.kms.keyName }}
+    {{- else if .Values.rds.master.generatePassword }}
+    passwordSecretRef:
+      name: {{ default (printf "%s-db-password" .Release.Name) .Values.rds.master.passwordSecretName | quote }}
+      key:  {{ .Values.rds.master.passwordSecretKey | default "password" | quote }}
+      namespace: {{ .Release.Namespace | quote }}
+    {{- else }}
+    passwordSecretRef:
+      name: {{ required "rds.master.passwordSecretName required when both managePasswordWithAWS=false and generatePassword=false" .Values.rds.master.passwordSecretName | quote }}
+      key:  {{ .Values.rds.master.passwordSecretKey | default "password" | quote }}
+      namespace: {{ .Release.Namespace | quote }}
+    {{- end }}
+{{- end }}

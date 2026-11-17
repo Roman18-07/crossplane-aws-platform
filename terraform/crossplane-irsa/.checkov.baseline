@@ -1,0 +1,27 @@
+{
+    "failed_checks": [
+        {
+            "file": "/iam-cloudwatch.tf",
+            "findings": [
+                {
+                    "resource": "aws_iam_policy.crossplane_cloudwatch",
+                    "check_ids": [
+                        "CKV_AWS_355"
+                    ]
+                }
+            ]
+        },
+        {
+            "file": "/iam-secretsmanager-rds.tf",
+            "findings": [
+                {
+                    "resource": "aws_iam_policy.crossplane_secretsmanager_rds",
+                    "check_ids": [
+                        "CKV_AWS_290",
+                        "CKV_AWS_355"
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,12 @@
+.idea
+**/.terraform
+**/.terraform.tfstate.lock.info
+**/certs
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/.back.*
+**/.terragrunt*
+**/*.tfvars
+**/*.tfplan
+**/charts/*.tgz
+.build/

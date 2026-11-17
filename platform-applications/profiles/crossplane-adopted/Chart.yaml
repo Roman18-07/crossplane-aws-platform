@@ -1,0 +1,9 @@
+apiVersion: v2
+name: crossplane-adopted
+description: Chart for crossplane adopted service
+version: 1.0.0
+
+dependencies:
+  - name: crossplane
+    version: "2.1.3"
+    repository: "https://charts.crossplane.io/stable"

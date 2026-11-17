@@ -1,0 +1,120 @@
+sourceCode:
+  # -- Repository URL
+  repositoryUrl: ""
+  # -- Commit SHA(Git assigns each commit a unique ID)
+  commitSha: ""
+
+metadata:
+  # -- Application name used in tags and default resource names. Defaults to the Helm release name.
+  application: ""
+  # -- Environment name used in tags, name prefixes and IAM guardrails (must match the Terraform `environment`). Empty = "staging".
+  environment: ""
+  owner:
+    team:
+      # -- Owner team id
+      id: ""
+      # -- Owner team name
+      name: ""
+
+s3:
+  # -- Turn on S3 resources (Bucket, ACL, PublicAccessBlock)
+  enabled: false
+  # -- Bucket name (required when s3.enabled=true; there is no generated default)
+  bucketName: ""
+  # -- AWS region for the bucket
+  region: us-east-1
+  # -- Force delete even if objects exist (good for tests)
+  forceDestroy: true
+
+  # -- ACL resource (separate Crossplane object)
+  acl:
+    enabled: true
+    # Valid: private|public-read|public-read-write|authenticated-read
+    value: private
+
+  # -- Public access block resource (recommended)
+  publicAccessBlock:
+    enabled: true
+    blockPublicAcls: true
+    blockPublicPolicy: true
+    ignorePublicAcls: true
+    restrictPublicBuckets: true
+
+  # -- Crossplane ProviderConfig name
+  providerConfigRef: crossplane-provider-aws-s3
+
+# -- RDS via Crossplane
+rds:
+  enabled: false
+  region: us-east-1
+
+  providerConfigRefs:
+    rds:        crossplane-provider-aws-rds
+    ec2:        crossplane-provider-aws-ec2
+    cloudwatch: crossplane-provider-aws-cloudwatch
+    kms:        crossplane-provider-aws-kms
+
+  subnetGroup:
+    name: ""
+    subnetIds: []
+  subnetIds: []
+
+  securityGroup:
+    name: ""
+    vpcId: ""
+    vpcCidr: ""
+    port: 5432
+    create: true
+
+  kms:
+    create: false
+    keyArn: ""
+    keyName: ""
+    alias: ""
+    description: ""
+    deletionWindowInDays: 7
+    enableRotation: true
+    keyAdministrators: []
+    keyEncryptDecrypt: []
+
+  instance:
+    identifier: ""
+    dbName: ""
+    engine: postgres
+    engineVersion: "17.5"
+    instanceClass: "db.t4g.small"
+    allocatedStorage: 100
+    maxAllocatedStorage: 200
+    storageType: gp3
+    deletionProtection: true
+    copyTagsToSnapshot: true
+    multiAZ: true
+    iamAuthEnabled: false
+    caCertIdentifier: "rds-ca-rsa2048-g1"
+    publiclyAccessible: false
+    performanceInsightsEnabled: true
+    backup:
+      retentionDays: 14
+      window: "06:00-06:30"
+    maintenanceWindow: "thu:07:00-thu:08:00"
+
+  master:
+    username: postgres
+    generatePassword: false
+    managePasswordWithAWS: true
+    passwordSecretName: ""
+    passwordSecretKey: "password"
+
+  connectionSecret:
+    name: ""
+    namespace: ""
+
+  cloudwatch:
+    enabled: true
+    snsTopicArn: ""
+    thresholds:
+      burstBalanceLow: 20
+      diskSpaceLowBytes: 5368709120
+      cpuHigh: 99
+      diskQueueDepthHigh: 30
+      freeMemoryLowBytes: 300000000

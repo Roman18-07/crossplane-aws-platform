@@ -1,0 +1,23 @@
+# S3: private bucket with a public access block.
+# helm template orders applications/profiles/aws-service-resources-v1 -f examples/s3-private-bucket.yaml
+metadata:
+  application: orders
+  environment: staging
+  owner:
+    team:
+      id: platform
+
+s3:
+  enabled: true
+  bucketName: staging-orders-artifacts
+  region: us-east-1
+  forceDestroy: false
+  acl:
+    enabled: false
+  publicAccessBlock:
+    enabled: true
+    blockPublicAcls: true
+    blockPublicPolicy: true
+    ignorePublicAcls: true
+    restrictPublicBuckets: true
+  providerConfigRef: crossplane-provider-aws-s3

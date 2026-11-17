@@ -1,0 +1,55 @@
+# RDS PostgreSQL with a dedicated KMS key + alias, an EC2 security group, AWS-managed
+# master password (Secrets Manager) and CloudWatch alarms.
+# helm template orders applications/profiles/aws-service-resources-v1 -f examples/rds-postgres-kms-cloudwatch.yaml
+metadata:
+  application: orders
+  environment: staging
+  owner:
+    team:
+      id: platform
+
+rds:
+  enabled: true
+  region: us-east-1
+
+  kms:
+    create: true
+    keyName: orders-db-kms
+    # IAM guardrail: alias must start with "<environment>-".
+    alias: staging-orders-db
+    description: "KMS key for orders RDS"
+    deletionWindowInDays: 7
+    enableRotation: true
+    # Include the Crossplane IRSA role, otherwise the provider loses access to the key it created.
+    keyAdministrators:
+      - arn:aws:iam::111111111111:role/staging-apps-crossplane-aws
+      - arn:aws:iam::111111111111:role/kms-admin
+    keyEncryptDecrypt:
+      - arn:aws:iam::111111111111:root
+
+  subnetGroup:
+    name: orders-db-subnet
+    subnetIds:
+      - subnet-0123456789abcdef0
+      - subnet-0123456789abcdef1
+
+  securityGroup:
+    vpcId: vpc-0123456789abcdef0
+    vpcCidr: 10.0.0.0/16
+    port: 5432
+
+  instance:
+    # Prefix with "<environment>-" so the CloudWatch alarm dimensions match the RDS identifier.
+    identifier: staging-orders-db
+    engineVersion: "17.5"
+    instanceClass: db.t4g.small
+    allocatedStorage: 50
+    maxAllocatedStorage: 100
+
+  master:
+    username: postgres
+    managePasswordWithAWS: true
+
+  cloudwatch:
+    enabled: true
+    snsTopicArn: arn:aws:sns:us-east-1:111111111111:staging-alerts

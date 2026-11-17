@@ -1,0 +1,15 @@
+name: example-service
+profile: aws-service-resources-v1
+sourceCode:
+  repositoryUrl: https://github.com/your-org/example-service
+  commitSha: "0000000"
+metadata:
+  application: example-service
+  environment: staging
+  applicationComponent: application-stack
+  owner:
+    team:
+      id: platform
+      name: Platform
+  source: managed-by-crossplane
+  repo: crossplane-aws-platform

@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: terraform
+    directories:
+      - "/terraform/*"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: helm
+    directories:
+      - "/platform-applications/profiles/crossplane-adopted"
+    schedule:
+      interval: "weekly"

@@ -1,0 +1,5 @@
+apiVersion: v2
+name: crossplane-provider-aws-cloudwatch-adopted
+description: Crossplane AWS CloudWatch provider + IRSA
+type: application
+version: 1.0.0

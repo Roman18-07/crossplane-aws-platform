@@ -1,0 +1,38 @@
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+{{ toYaml .Values.customLabels | indent 4 }}
+spec:
+  deploymentTemplate:
+    metadata:
+      name: {{ .Release.Name }}
+      labels:
+{{ toYaml .Values.customLabels | indent 8 }}
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: {{ .Release.Name }}
+      template:
+        metadata:
+          labels:
+            app: {{ .Release.Name }}
+          annotations:
+            traffic.sidecar.istio.io/excludeInboundPorts: "9443"
+        spec:
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          serviceAccountName: {{ .Release.Name }}
+          containers:
+            - name: package-runtime
+              resources:
+{{ toYaml .Values.resources | indent 16 }}
+  serviceAccountTemplate:
+    metadata:
+      name: {{ .Release.Name }}
+      annotations:
+{{ toYaml .Values.serviceAccount.annotations | indent 8 }}

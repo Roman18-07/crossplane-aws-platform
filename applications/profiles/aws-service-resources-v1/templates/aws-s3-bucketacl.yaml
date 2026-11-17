@@ -1,0 +1,16 @@
+{{- if .Values.s3.enabled }}
+{{- if .Values.s3.acl.enabled }}
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: BucketACL
+metadata:
+  name: {{ .Values.s3.bucketName }}
+spec:
+  providerConfigRef:
+    name: {{ .Values.s3.providerConfigRef }}
+  forProvider:
+    region: {{ .Values.s3.region }}
+    acl: {{ .Values.s3.acl.value }}
+    bucketRef:
+      name: {{ .Values.s3.bucketName }}
+{{- end }}
+{{- end }}

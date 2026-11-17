@@ -1,0 +1,12 @@
+package: xpkg.upbound.io/upbound/provider-aws-kms:v2.1.0
+customLabels: {}
+serviceAccount:
+  annotations: {}
+nodeSelector: {}
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 250m
+    memory: 512Mi

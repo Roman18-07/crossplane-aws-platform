@@ -1,0 +1,13 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    backstage.io/kubernetes-id: {{ .Release.Name }}
+{{- with .Values.customLabels }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+  package: {{ .Values.package }}
+  runtimeConfigRef:
+    name: {{ .Release.Name }}

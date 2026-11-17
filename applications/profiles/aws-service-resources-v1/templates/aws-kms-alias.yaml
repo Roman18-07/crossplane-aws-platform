@@ -1,0 +1,23 @@
+{{- if and .Values.rds.enabled .Values.rds.kms.create }}
+apiVersion: kms.aws.upbound.io/v1beta1
+kind: Alias
+metadata:
+  name: {{ required "rds.kms.alias required" .Values.rds.kms.alias | replace "_" "-" }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/sync-options: ServerSideApply=true
+    argocd.argoproj.io/ignore-differences: |
+      jsonPointers:
+      - /metadata/annotations/crossplane.io~1external-name
+      - /spec/forProvider/targetKeyId
+      - /spec/forProvider/targetKeyIdRef
+      - /spec/forProvider/targetKeyIdSelector
+    crossplane.io/external-name: alias/{{ .Values.rds.kms.alias }}
+spec:
+  providerConfigRef:
+    name: {{ .Values.rds.providerConfigRefs.kms }}
+  forProvider:
+    region: {{ .Values.rds.region }}
+    targetKeyIdRef:
+      name: {{ .Values.rds.kms.keyName }}
+{{- end }}

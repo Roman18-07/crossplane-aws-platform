@@ -1,0 +1,36 @@
+{{- if .Values.rds.enabled }}
+{{- $vals := (.Values | toYaml | fromYaml) -}}
+{{- $env := default "staging" (index $vals "metadata" "environment") -}}
+{{- $app := default .Release.Name (index $vals "metadata" "application") -}}
+{{- $teamId := (index $vals "metadata" "owner" "team" "id" | default "platform") -}}
+{{- $repo := (default .Values.sourceCode.repositoryUrl (index $vals "metadata" "repo")) -}}
+{{- $subnets := (coalesce .Values.rds.subnetIds .Values.rds.subnetGroup.subnetIds) -}}
+{{- $sgName := default (printf "%s-%s-db-subnet" .Release.Namespace .Release.Name) .Values.rds.subnetGroup.name -}}
+
+apiVersion: rds.aws.upbound.io/v1beta1
+kind: SubnetGroup
+metadata:
+  name: {{ $sgName }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  providerConfigRef:
+    name: {{ .Values.rds.providerConfigRefs.rds }}
+  forProvider:
+    region: {{ .Values.rds.region }}
+    description: "DB subnet group for {{ .Release.Name }}"
+    subnetIds:
+{{- range $subnets }}
+      - {{ . | quote }}
+{{- end }}
+    tags:
+      Application: {{ $app | quote }}
+      Environment: {{ $env | quote }}
+      ApplicationComponent: {{ (index $vals "metadata" "applicationComponent" | default "application-stack") | quote }}
+      BudgetOwnerTeamId: {{ $teamId | quote }}
+      kubernetes_cluster: {{ printf "%s-apps" $env | quote }}
+      kubernetes_namespace: {{ .Release.Namespace | quote }}
+      Name: {{ $sgName | quote }}
+      Repo: {{ $repo | quote }}
+      Source: {{ (index $vals "metadata" "source" | default "managed-by-crossplane") | quote }}
+{{- end }}

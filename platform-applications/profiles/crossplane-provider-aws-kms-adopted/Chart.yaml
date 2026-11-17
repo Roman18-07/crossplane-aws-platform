@@ -1,0 +1,5 @@
+apiVersion: v2
+name: crossplane-provider-aws-kms-adopted
+description: Crossplane AWS KMS provider + IRSA
+type: application
+version: 1.0.0

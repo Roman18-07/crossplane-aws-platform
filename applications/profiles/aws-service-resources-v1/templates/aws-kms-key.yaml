@@ -1,0 +1,76 @@
+{{- if and .Values.rds.enabled .Values.rds.kms.create }}
+{{- $vals := (.Values | toYaml | fromYaml) -}}
+{{- $env := default "staging" (index $vals "metadata" "environment") -}}
+{{- $app := default .Release.Name (index $vals "metadata" "application") -}}
+{{- $teamId := (index $vals "metadata" "owner" "team" "id" | default "platform") -}}
+{{- $repo := (default .Values.sourceCode.repositoryUrl (index $vals "metadata" "repo")) -}}
+
+apiVersion: kms.aws.upbound.io/v1beta1
+kind: Key
+metadata:
+  name: {{ required "rds.kms.keyName required" .Values.rds.kms.keyName | replace "_" "-" | lower | trunc 63 | trimSuffix "-" }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+  labels:
+    Environment: {{ $env | quote }}
+    Application:  {{ $app | quote }}
+spec:
+  providerConfigRef:
+    name: {{ .Values.rds.providerConfigRefs.kms }}
+  deletionPolicy: Orphan
+  managementPolicies:
+    - Observe
+    - Create
+    - Update
+    - LateInitialize
+  forProvider:
+    region: {{ .Values.rds.region }}
+    description: {{ .Values.rds.kms.description | quote }}
+    keyUsage: ENCRYPT_DECRYPT
+    customerMasterKeySpec: SYMMETRIC_DEFAULT
+    deletionWindowInDays: {{ .Values.rds.kms.deletionWindowInDays }}
+    enableKeyRotation: {{ .Values.rds.kms.enableRotation }}
+    tags:
+      Application: {{ $app | quote }}
+      Environment: {{ $env | quote }}
+      ApplicationComponent: {{ (index $vals "metadata" "applicationComponent" | default "application-stack") | quote }}
+      BudgetOwnerTeamId: {{ $teamId | quote }}
+      kubernetes_cluster: {{ printf "%s-apps" $env | quote }}
+      kubernetes_namespace: {{ .Release.Namespace | quote }}
+      Name: {{ required "rds.kms.keyName required" .Values.rds.kms.keyName | quote }}
+      Repo: {{ $repo | quote }}
+      Source: {{ (index $vals "metadata" "source" | default "managed-by-crossplane") | quote }}
+
+    policy: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {{- if .Values.rds.kms.keyAdministrators -}}
+          {
+            "Sid": "KeyAdministratorAccess",
+            "Effect": "Allow",
+            "Principal": { "AWS": [{{- range $i, $p := .Values.rds.kms.keyAdministrators }}{{ if $i }}, {{ end }}"{{ $p }}"{{ end }}] },
+            "Action": [ "kms:*" ],
+            "Resource": "*"
+          }{{- if .Values.rds.kms.keyEncryptDecrypt }},{{ end }}
+          {{- end }}
+          {{- if .Values.rds.kms.keyEncryptDecrypt -}}
+          {
+            "Sid": "KeyEncryptDecryptAccess",
+            "Effect": "Allow",
+            "Principal": { "AWS": [{{- range $i, $p := .Values.rds.kms.keyEncryptDecrypt }}{{ if $i }}, {{ end }}"{{ $p }}"{{ end }}] },
+            "Action": [
+              "kms:Decrypt",
+              "kms:DescribeKey",
+              "kms:Encrypt",
+              "kms:GenerateDataKey*",
+              "kms:ReEncrypt*",
+              "kms:ListAliases",
+              "kms:CreateGrant"
+            ],
+            "Resource": "*"
+          }
+          {{- end }}
+        ]
+      }
+{{- end }}

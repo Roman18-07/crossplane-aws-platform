@@ -1,0 +1,17 @@
+extends: default
+
+ignore: |
+  .build/
+  **/templates/
+  **/charts/
+
+rules:
+  document-start: disable
+  line-length:
+    max: 160
+  truthy:
+    check-keys: false
+  colons:
+    max-spaces-after: -1
+  comments:
+    min-spaces-from-content: 1

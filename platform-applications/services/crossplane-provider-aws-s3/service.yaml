@@ -1,0 +1,16 @@
+name: crossplane-provider-aws-s3
+profile: crossplane-provider-aws-s3-adopted
+namespace: crossplane-system
+istio-injection: enabled
+
+customLabels:
+  env: staging
+  teamId: platform
+  departmentId: engineering
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/staging-apps-crossplane-aws
+
+nodeSelector:
+  usageType: platform-arm64

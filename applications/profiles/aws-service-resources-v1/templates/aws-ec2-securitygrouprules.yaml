@@ -1,0 +1,39 @@
+{{- if .Values.rds.enabled }}
+{{- $app := default .Release.Name .Values.metadata.application -}}
+{{- $env := default "staging" .Values.metadata.environment -}}
+{{- $sgName := default (printf "%s-%s-db-access" $env $app) .Values.rds.securityGroup.name -}}
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: SecurityGroupRule
+metadata:
+  name: {{ $sgName }}-ingress
+spec:
+  providerConfigRef:
+    name: {{ .Values.rds.providerConfigRefs.ec2 }}
+  forProvider:
+    region: {{ .Values.rds.region }}
+    type: ingress
+    protocol: tcp
+    fromPort: {{ .Values.rds.securityGroup.port }}
+    toPort: {{ .Values.rds.securityGroup.port }}
+    cidrBlocks:
+      - {{ required "rds.securityGroup.vpcCidr is required" .Values.rds.securityGroup.vpcCidr }}
+    securityGroupIdRef:
+      name: {{ $sgName }}
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: SecurityGroupRule
+metadata:
+  name: {{ $sgName }}-egress-all
+spec:
+  providerConfigRef:
+    name: {{ .Values.rds.providerConfigRefs.ec2 }}
+  forProvider:
+    region: {{ .Values.rds.region }}
+    type: egress
+    protocol: "-1"
+    fromPort: 0
+    toPort: 0
+    cidrBlocks: [ "0.0.0.0/0" ]
+    securityGroupIdRef:
+      name: {{ $sgName }}
+{{- end }}

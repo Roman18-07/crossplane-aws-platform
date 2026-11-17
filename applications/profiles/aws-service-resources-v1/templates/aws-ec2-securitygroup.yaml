@@ -1,0 +1,31 @@
+{{- if .Values.rds.enabled }}
+{{- $vals := (.Values | toYaml | fromYaml) -}}
+{{- $app := default .Release.Name (index $vals "metadata" "application") -}}
+{{- $env := default "staging" (index $vals "metadata" "environment") -}}
+{{- $teamId := (index $vals "metadata" "owner" "team" "id" | default "platform") -}}
+{{- $sgName := default (printf "%s-%s-db-access" $env $app) (index $vals "rds" "securityGroup" "name") -}}
+{{- $repo := (default .Values.sourceCode.repositoryUrl (index $vals "metadata" "repo")) -}}
+
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: SecurityGroup
+metadata:
+  name: {{ $sgName }}
+spec:
+  providerConfigRef:
+    name: {{ .Values.rds.providerConfigRefs.ec2 }}
+  forProvider:
+    region: {{ .Values.rds.region }}
+    name: {{ $sgName }}
+    description: "Allow access to the DB for {{ $app }}"
+    vpcId: {{ required "rds.securityGroup.vpcId is required" .Values.rds.securityGroup.vpcId }}
+    tags:
+      Application: {{ $app | quote }}
+      Environment: {{ $env | quote }}
+      ApplicationComponent: {{ (index $vals "metadata" "applicationComponent" | default "application-stack") | quote }}
+      BudgetOwnerTeamId: {{ $teamId | quote }}
+      kubernetes_cluster: {{ printf "%s-apps" $env | quote }}
+      kubernetes_namespace: {{ .Release.Namespace | quote }}
+      Name: {{ $sgName | quote }}
+      Repo: {{ $repo | quote }}
+      Source: {{ (index $vals "metadata" "source" | default "managed-by-crossplane") | quote }}
+{{- end }}

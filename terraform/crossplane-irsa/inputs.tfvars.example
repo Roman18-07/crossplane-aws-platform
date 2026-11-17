@@ -1,0 +1,9 @@
+environment                = "staging"
+application                = "crossplane"
+aws_region                 = "us-east-1"
+target_account_deploy_role = "arn:aws:iam::111111111111:role/terraform-deploy-role"
+namespace                  = "crossplane-system"
+vpc_id                     = "vpc-0123456789abcdef0"
+
+# Optional: name of an existing EKS cluster. Defaults to "<environment>-apps".
+# kubernetes_cluster_name = "my-existing-eks"

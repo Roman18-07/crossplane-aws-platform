@@ -1,0 +1,15 @@
+name: crossplane
+profile: crossplane-adopted
+namespace: crossplane-system
+istio-injection: enabled
+
+crossplane:
+  customLabels:
+    env: staging
+    teamId: platform
+    departmentId: engineering
+  nodeSelector:
+    usageType: platform-arm64
+  rbacManager:
+    nodeSelector:
+      usageType: platform-arm64

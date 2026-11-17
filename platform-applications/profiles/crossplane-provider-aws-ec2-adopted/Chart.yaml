@@ -1,0 +1,5 @@
+apiVersion: v2
+name: crossplane-provider-aws-ec2-adopted
+description: Crossplane AWS EC2 provider + IRSA
+type: application
+version: 1.0.0

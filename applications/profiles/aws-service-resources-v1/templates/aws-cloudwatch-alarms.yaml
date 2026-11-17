@@ -1,0 +1,142 @@
+{{- if and .Values.rds.enabled .Values.rds.cloudwatch.enabled }}
+{{- $env    := default "staging" .Values.metadata.environment }}
+{{- $id     := required "rds.instance.identifier is required for alarms" .Values.rds.instance.identifier }}
+{{- $sns    := .Values.rds.cloudwatch.snsTopicArn }}
+{{- $aws    := (index .Values "aws" | default dict) }}
+{{- $region := default "us-east-1" (coalesce .Values.rds.region (index $aws "region")) }}
+
+---
+apiVersion: cloudwatch.aws.upbound.io/v1beta1
+kind: MetricAlarm
+metadata:
+  name: {{ $id }}-burst-balance-low
+spec:
+  providerConfigRef:
+    name: {{ .Values.rds.providerConfigRefs.cloudwatch }}
+  forProvider:
+    region: {{ $region | quote }}
+    comparisonOperator: LessThanThreshold
+    evaluationPeriods: 1
+    datapointsToAlarm: 1
+    metricName: BurstBalance
+    namespace: AWS/RDS
+    period: 60
+    statistic: Average
+    threshold: {{ .Values.rds.cloudwatch.thresholds.burstBalanceLow }}
+{{- if $sns }}
+    alarmActions:
+      - {{ $sns | quote }}
+    okActions:
+      - {{ $sns | quote }}
+{{- end }}
+    dimensions:
+      DBInstanceIdentifier: {{ $id | quote }}
+
+---
+apiVersion: cloudwatch.aws.upbound.io/v1beta1
+kind: MetricAlarm
+metadata:
+  name: {{ $id }}-disk-space-low
+spec:
+  providerConfigRef:
+    name: {{ .Values.rds.providerConfigRefs.cloudwatch }}
+  forProvider:
+    region: {{ $region | quote }}
+    comparisonOperator: LessThanThreshold
+    evaluationPeriods: 1
+    datapointsToAlarm: 1
+    metricName: FreeStorageSpace
+    namespace: AWS/RDS
+    period: 60
+    statistic: Average
+    threshold: {{ .Values.rds.cloudwatch.thresholds.diskSpaceLowBytes }}
+{{- if $sns }}
+    alarmActions:
+      - {{ $sns | quote }}
+    okActions:
+      - {{ $sns | quote }}
+{{- end }}
+    dimensions:
+      DBInstanceIdentifier: {{ $id | quote }}
+
+---
+apiVersion: cloudwatch.aws.upbound.io/v1beta1
+kind: MetricAlarm
+metadata:
+  name: {{ $id }}-cpu-high
+spec:
+  providerConfigRef:
+    name: {{ .Values.rds.providerConfigRefs.cloudwatch }}
+  forProvider:
+    region: {{ $region | quote }}
+    comparisonOperator: GreaterThanThreshold
+    evaluationPeriods: 5
+    datapointsToAlarm: 1
+    metricName: CPUUtilization
+    namespace: AWS/RDS
+    period: 60
+    statistic: Average
+    threshold: {{ .Values.rds.cloudwatch.thresholds.cpuHigh }}
+{{- if $sns }}
+    alarmActions:
+      - {{ $sns | quote }}
+    okActions:
+      - {{ $sns | quote }}
+{{- end }}
+    dimensions:
+      DBInstanceIdentifier: {{ $id | quote }}
+
+---
+apiVersion: cloudwatch.aws.upbound.io/v1beta1
+kind: MetricAlarm
+metadata:
+  name: {{ $id }}-disk-queue-depth-high
+spec:
+  providerConfigRef:
+    name: {{ .Values.rds.providerConfigRefs.cloudwatch }}
+  forProvider:
+    region: {{ $region | quote }}
+    comparisonOperator: GreaterThanThreshold
+    evaluationPeriods: 1
+    datapointsToAlarm: 1
+    metricName: DiskQueueDepth
+    namespace: AWS/RDS
+    period: 60
+    statistic: Average
+    threshold: {{ .Values.rds.cloudwatch.thresholds.diskQueueDepthHigh }}
+{{- if $sns }}
+    alarmActions:
+      - {{ $sns | quote }}
+    okActions:
+      - {{ $sns | quote }}
+{{- end }}
+    dimensions:
+      DBInstanceIdentifier: {{ $id | quote }}
+
+---
+apiVersion: cloudwatch.aws.upbound.io/v1beta1
+kind: MetricAlarm
+metadata:
+  name: {{ $id }}-free-memory-low
+spec:
+  providerConfigRef:
+    name: {{ .Values.rds.providerConfigRefs.cloudwatch }}
+  forProvider:
+    region: {{ $region | quote }}
+    comparisonOperator: LessThanThreshold
+    evaluationPeriods: 1
+    datapointsToAlarm: 1
+    metricName: FreeableMemory
+    namespace: AWS/RDS
+    period: 60
+    statistic: Average
+    threshold: {{ .Values.rds.cloudwatch.thresholds.freeMemoryLowBytes }}
+{{- if $sns }}
+    alarmActions:
+      - {{ $sns | quote }}
+    okActions:
+      - {{ $sns | quote }}
+{{- end }}
+    dimensions:
+      DBInstanceIdentifier: {{ $id | quote }}
+{{- end }}

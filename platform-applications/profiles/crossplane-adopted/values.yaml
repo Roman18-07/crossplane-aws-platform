@@ -1,0 +1,3 @@
+crossplane:
+  customAnnotations:
+    traffic.sidecar.istio.io/excludeInboundPorts: "9443"

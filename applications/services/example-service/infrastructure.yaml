@@ -1,0 +1,83 @@
+s3:
+  enabled: true
+  bucketName: staging-example-service-assets
+  region: us-east-1
+  forceDestroy: true
+  acl:
+    enabled: false
+    value: private
+  publicAccessBlock:
+    enabled: true
+    blockPublicAcls: true
+    blockPublicPolicy: true
+    ignorePublicAcls: true
+    restrictPublicBuckets: true
+  providerConfigRef: crossplane-provider-aws-s3
+
+rds:
+  enabled: false
+  region: us-east-1
+
+  providerConfigRefs:
+    rds:        crossplane-provider-aws-rds
+    ec2:        crossplane-provider-aws-ec2
+    kms:        crossplane-provider-aws-kms
+    cloudwatch: crossplane-provider-aws-cloudwatch
+
+  kms:
+    create: true
+    keyName: example-service-db-kms
+    alias: staging-example-service-db
+    description: "KMS for example-service RDS"
+    deletionWindowInDays: 7
+    enableRotation: true
+    keyAdministrators:
+      - arn:aws:iam::111111111111:role/staging-apps-crossplane-aws
+      - arn:aws:iam::111111111111:role/kms-admin
+    keyEncryptDecrypt:
+      - arn:aws:iam::111111111111:root
+
+  subnetGroup:
+    name: example-service-db-subnet
+    subnetIds:
+      - subnet-0123456789abcdef0
+      - subnet-0123456789abcdef1
+      - subnet-0123456789abcdef2
+
+  securityGroup:
+    name: staging-example-service-db-access
+    vpcId: vpc-0123456789abcdef0
+    vpcCidr: 10.0.0.0/16
+    port: 5432
+
+  instance:
+    identifier: staging-example-service-db
+    engine: postgres
+    engineVersion: "17.5"
+    instanceClass: db.t4g.small
+    allocatedStorage: 100
+    maxAllocatedStorage: 200
+    storageType: gp3
+    backup:
+      retentionDays: 14
+      window: "06:00-06:30"
+    maintenanceWindow: "thu:07:00-thu:08:00"
+
+  master:
+    username: postgres
+    generatePassword: false
+    managePasswordWithAWS: true
+
+  connectionSecret:
+    name: example-service-db
+    namespace: example-service-a
+
+  cloudwatch:
+    enabled: true
+    snsTopicArn: arn:aws:sns:us-east-1:111111111111:staging-alerts
+    thresholds:
+      burstBalanceLow: 20
+      diskSpaceLowBytes: 5368709120
+      cpuHigh: 99
+      diskQueueDepthHigh: 30
+      freeMemoryLowBytes: 300000000

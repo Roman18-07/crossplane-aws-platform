@@ -1,0 +1,36 @@
+# RDS PostgreSQL encrypted with an existing KMS key; master password read from a
+# Kubernetes Secret that already exists in the release namespace. No CloudWatch alarms.
+# helm template payments applications/profiles/aws-service-resources-v1 -f examples/rds-postgres-existing-kms.yaml
+metadata:
+  application: payments
+  environment: staging
+
+rds:
+  enabled: true
+  region: us-east-1
+
+  kms:
+    create: false
+    keyArn: arn:aws:kms:us-east-1:111111111111:key/00000000-0000-0000-0000-000000000000
+
+  subnetGroup:
+    subnetIds:
+      - subnet-0123456789abcdef0
+      - subnet-0123456789abcdef1
+
+  securityGroup:
+    vpcId: vpc-0123456789abcdef0
+    vpcCidr: 10.0.0.0/16
+
+  instance:
+    identifier: staging-payments-db
+
+  master:
+    username: postgres
+    managePasswordWithAWS: false
+    generatePassword: false
+    passwordSecretName: payments-db-master
+    passwordSecretKey: password
+
+  cloudwatch:
+    enabled: false

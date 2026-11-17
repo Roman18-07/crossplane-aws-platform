@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: services
+  namespace: argo-cd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Project containing services
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  destinations:
+    # Fix inspired by https://github.com/argoproj/argo-cd/issues/16845#issuecomment-2141633904
+    - name: "*"
+      namespace: "*"
+      server: https://kubernetes.default.svc
+  sourceRepos:
+    - "*"

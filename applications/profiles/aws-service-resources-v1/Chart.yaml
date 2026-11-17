@@ -1,0 +1,5 @@
+apiVersion: v2
+name: aws-service-resources-v1
+description: AWS resources (S3, RDS, KMS, EC2 security groups, CloudWatch alarms) for a service, rendered as Crossplane managed resources
+type: application
+version: 1.0.0
