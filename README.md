@@ -747,3 +747,37 @@ Not included:
 
 No license file is included, because the license must be chosen by the copyright holder of the original
 material.
+
+## Web UI & Infrastructure Management
+
+The platform integrates with Argo CD to provide a web-based interface for monitoring and managing infrastructure deployments.
+
+Through the Argo CD UI, platform engineers can:
+
+- Monitor Crossplane-managed infrastructure resources.
+- Inspect Kubernetes resource health and synchronization status.
+- Explore relationships between GitOps applications and managed resources.
+- Review deployment manifests and identify reconciliation errors.
+- Trigger synchronization and manage application deployments.
+- Track configuration changes through Git-based workflows.
+
+### Infrastructure Provisioning Workflow
+
+Infrastructure is defined declaratively using Helm values and service configuration files.
+
+1. Define AWS resources in `infrastructure.yaml`.
+2. Commit and push changes to the Git repository.
+3. Argo CD detects the configuration changes.
+4. Helm renders Crossplane AWS Managed Resources.
+5. Crossplane reconciles the desired state with AWS.
+6. Monitor deployment status through the Argo CD UI.
+
+### Accessing the UI
+
+Open your existing Argo CD installation:
+
+`https://<your-argocd-host>`
+
+The Argo CD UI provides visibility into Kubernetes resources and GitOps deployments. It does not replace the AWS Console or provide complete control over AWS resources.
+
+Crossplane resource status and detailed reconciliation events can also be inspected using `kubectl`.
